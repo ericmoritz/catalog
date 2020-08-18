@@ -48,4 +48,12 @@ This API will be as follows:
 - Repository/Person/Mock - Provides the mock repository implementation for testing
 - Transport/HTTP - Defines the RESTful HTTP interface to the CreativeWork and Author services
 
+## Testing
+
+In order to test this service I will have to figure out how to swap the repositories with mocks when testing.
+
+Resources:
+
+- https://felixmulder.com/writing/2019/10/05/Designing-testable-components.html
+
 ![I have no idea](./ihave.jpg)
