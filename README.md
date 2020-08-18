@@ -1,6 +1,8 @@
 # Catalog service
 
-This is an example catalog service.  It will provide a RESTful API to catalog https://schema.org/CreativeWork objects.  It is very basic but requires enough functionality for modern services.
+This is an example catalog service. It will provide a RESTful API to catalog
+https://schema.org/CreativeWork objects. It is very basic but requires enough
+functionality to resemble a modern service.
 
 ## Domain Model
 
