@@ -18,9 +18,7 @@ import Control.Monad.Trans.Except
 import Data.Either.Combinators (mapBoth)
 
 import Catalog.Entity.CreativeWork (CreativeWork(..))
-import Catalog.Repository.CreativeWork (runCreativeWorkRepoApp, CreativeWorkRepoApp, CreativeWorkRepoError(..))
--- TODO: figure out how to DI the repository
-import qualified Catalog.Repository.CreativeWork.Mock as CreativeWorkRepo
+import qualified Catalog.Repository.CreativeWork as CreativeWorkRepo
 
 
 data CreativeWorkResponse = CreativeWorkResponse
@@ -38,30 +36,30 @@ type API =
     :<|> Capture "id" String :> Get '[JSON] CreativeWorkResponse
     )
 
-startApp :: IO ()
-startApp = do
+startApp :: CreativeWorkRepo.Handle -> IO ()
+startApp worksRepoHandle = do
   putStrLn "Listening on :8000"
-  run 8000 app
+  run 8000 $ app worksRepoHandle
 
-app :: Application
-app = serve api server
+app :: CreativeWorkRepo.Handle -> Application
+app worksRepoHandle = serve api $ server worksRepoHandle
 
 api :: Proxy API
 api = Proxy
 
-server :: ServerT API Handler
-server = worksServer
+server :: CreativeWorkRepo.Handle -> ServerT API Handler
+server worksRepoHandle = worksServer worksRepoHandle
 
 -- CreativeWorks API
-worksServer = hoistServer api workAppToHandler (works :<|> findWork)
+worksServer worksRepoHandle = hoistServer api workAppToHandler (works :<|> findWork)
   where
-    works = map workToCreativeWorkResponse <$> CreativeWorkRepo.listAll
-    findWork id = workToCreativeWorkResponse <$> (CreativeWorkRepo.findById id)
+    works = map workToCreativeWorkResponse <$> (CreativeWorkRepo.listAll worksRepoHandle)
+    findWork id = workToCreativeWorkResponse <$> (CreativeWorkRepo.findById worksRepoHandle id)
 
--- This maps our custom CreativeWorkRepoApp into a Handler for servant
-workAppToHandler :: CreativeWorkRepoApp a -> Handler a
+-- This maps our custom CreativeWorkRepo.App into a Handler for servant
+workAppToHandler :: CreativeWorkRepo.App a -> Handler a
 workAppToHandler x = do
-  eitherErrorOrRes <- liftIO $ fmap (mapBoth workRepoErrorToServerError id) $ runCreativeWorkRepoApp x
+  eitherErrorOrRes <- liftIO $ fmap (mapBoth workRepoErrorToServerError id) $ CreativeWorkRepo.runApp x
   either throwError return eitherErrorOrRes
 
 workToCreativeWorkResponse cw = CreativeWorkResponse { url = "/works/" ++ creativeWorkId cw
@@ -71,5 +69,5 @@ workToCreativeWorkResponse cw = CreativeWorkResponse { url = "/works/" ++ creati
                                                      }
 
 -- TODO: Make these a standard JSON error type
-workRepoErrorToServerError CreativeWorkNotFound = err404
-workRepoErrorToServerError (CreativeWorkInternalError _) = err500
+workRepoErrorToServerError CreativeWorkRepo.CreativeWorkNotFound = err404
+workRepoErrorToServerError (CreativeWorkRepo.CreativeWorkInternalError _) = err500

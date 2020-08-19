@@ -1,13 +1,18 @@
 -- | types for the CreativeWork repository
 
-module Catalog.Repository.CreativeWork (runCreativeWorkRepoApp, CreativeWorkRepoApp, CreativeWorkRepoError(..))
+module Catalog.Repository.CreativeWork (runApp, App, Error(..), Handle(..))
 where
 
 import Control.Monad.Trans.Except
+import Catalog.Entity.CreativeWork
 
-type CreativeWorkRepoApp a = ExceptT CreativeWorkRepoError IO a
+type App a = ExceptT Error IO a
 
-data CreativeWorkRepoError = CreativeWorkNotFound | CreativeWorkInternalError String
+data Error = CreativeWorkNotFound | CreativeWorkInternalError String
 
-runCreativeWorkRepoApp :: CreativeWorkRepoApp a -> IO (Either CreativeWorkRepoError a)
-runCreativeWorkRepoApp = runExceptT
+runApp :: App a -> IO (Either Error a)
+runApp = runExceptT
+
+data Handle = Handle { listAll :: App [ CreativeWork ]
+                     , findById :: String -> App CreativeWork
+                     }
